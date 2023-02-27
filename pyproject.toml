@@ -37,6 +37,7 @@ python = "^3.8.1"
 Pillow = "^9.4.0"
 scikit-image = "^0.19.3"
 opencv-python = "^4.7.0"
+Flask = "^2.2.3"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^6.0.0"
