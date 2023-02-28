@@ -1,0 +1,34 @@
+<!-- index.html -->
+<html>
+<head>
+  <title>AJAX Example</title>
+</head>
+<body>
+  <h1>Example Page</h1>
+  <div id="content">
+    <p>Click the button to load some data:</p>
+    <button onclick="loadData()">Load Data</button>
+  </div>
+  <script>
+    function loadData() {
+      // Create an XMLHttpRequest object
+      const xhr = new XMLHttpRequest();
+
+      // Set up a callback function to handle the response
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          // Update the content of the 'content' div
+          const responseText = xhr.responseText;
+          document.getElementById('content').innerHTML = responseText;
+        }
+      };
+
+      // Set up the request
+      xhr.open('GET', '/data', true);
+
+      // Send the request
+      xhr.send();
+    }
+  </script>
+</body>
+</html>
