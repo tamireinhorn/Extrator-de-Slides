@@ -7,6 +7,7 @@ import cv2
 from skimage.metrics import structural_similarity
 import os
 from PIL import Image
+import io
 
 
 def receive_input() -> int:
@@ -18,7 +19,9 @@ def receive_input() -> int:
     Returns:
         int: The int value in seconds inputed by the user.
     """
-    raw_seconds = input("Quanto deve durar um slide (em segundos) para que seja relevante? ")
+    raw_seconds = input(
+        "Quanto deve durar um slide (em segundos) para que seja relevante? "
+    )
     try:
         seconds = int(raw_seconds)
     except ValueError:
@@ -26,6 +29,27 @@ def receive_input() -> int:
     if seconds <= 0:
         raise ValueError("Valor inválido. Segundos são um número inteiro maior que 0.")
     return seconds
+
+
+def validate_video(filename: str) -> str:
+    """Verifies if the chosen file is an actual video file.
+
+    Args:
+        filename (str): Receives the full path to the video file chosen by user.
+
+    Raises:
+        ValueError:  If the file extension is not recognized as a valid video type.
+
+    Returns:
+        str: The full path to the file chosen by user.
+    """
+    # mypy can't see the library where this is properly defined
+    # Verifies for valid video file
+    if not mimetypes.guess_type(filename)[0].startswith("video"):  # type: ignore[union-attr]
+        raise ValueError(
+            "O programa apenas suporta arquivos de vídeo. Escolha um arquivo de vídeo."
+        )
+    return filename
 
 
 def choose_video() -> str:
@@ -37,12 +61,10 @@ def choose_video() -> str:
     Returns:
         str: The full path to the file chosen by the user.
     """
-    filename: str = fd.askopenfilename(title= 'Escolha um arquivo de vídeo.')  # noqa: E251
-    # mypy can't see the library where this is properly defined
-    # Verifies for valid video file
-    if not mimetypes.guess_type(filename)[0].startswith('video'):  # type: ignore[union-attr]
-        raise ValueError("O programa apenas suporta arquivos de vídeo. Escolha um arquivo de vídeo.")
-    return filename
+    filename: str = fd.askopenfilename(
+        title="Escolha um arquivo de vídeo."
+    )  # noqa: E251
+    return validate_video(filename)
 
 
 def calculate_length_video(video: cv2.VideoCapture) -> int:
@@ -54,7 +76,7 @@ def calculate_length_video(video: cv2.VideoCapture) -> int:
     Returns:
         int: Duration of the video in seconds.
     """
-    fps = video.get(cv2.CAP_PROP_FPS)      #
+    fps = video.get(cv2.CAP_PROP_FPS)  #
     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
     duration = int(frame_count / fps)
     return duration
@@ -74,11 +96,18 @@ def calculate_iterations(video_length: int, seconds: int) -> int:
         int: Returns the number of times the processing and comparing of frames will be done.
     """
     if video_length < seconds:
-        raise ValueError(f"Você escolheu {seconds} segundos para um slide ser relevante, mas o vídeo dura só {video_length} segundos")
+        raise ValueError(
+            f"Você escolheu {seconds} segundos para um slide ser relevante, mas o vídeo dura só {video_length} segundos"
+        )
     return (video_length // seconds) + 1
 
 
-def image_comparison(imageA: cv2.VideoCapture, imageB: cv2.VideoCapture, threshold: float = 0.9) -> bool:
+def image_comparison(
+    imageA: cv2.VideoCapture,
+    imageB: cv2.VideoCapture,
+    is_grayscaled: bool = False,
+    threshold: float = 0.9,
+) -> bool:
     """Compares video frames by greyscaling them and then applying the structural similarity algorithm.
 
 
@@ -95,11 +124,22 @@ def image_comparison(imageA: cv2.VideoCapture, imageB: cv2.VideoCapture, thresho
         bool: Returns True if the images are considered to be different.
     """
     if threshold >= 1 or threshold <= 0:
-        raise ValueError("A tolerância para similaridade tem que ser um número positivo entre 0 e 1.")
-    grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
-    grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
-    score: float = structural_similarity(grayA, grayB)  # The closer to 1 in absolute, the more similar they are. 0.9 is my arbitrary threshold.
-    return abs(score) < threshold  # If the similarity is not that close to 1, they're different.
+        raise ValueError(
+            "A tolerância para similaridade tem que ser um número positivo entre 0 e 1."
+        )
+    score: float = -1.0
+    if not is_grayscaled:
+        # If we passed in a colored image, we grayscale it before doing structural similarity.
+        grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
+        grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
+        score = structural_similarity(grayA, grayB)
+    else:
+        score = structural_similarity(
+            imageA, imageB
+        )  # The closer to 1 in absolute, the more similar they are. 0.9 is my arbitrary threshold.
+    return (
+        abs(score) < threshold
+    )  # If the similarity is not that close to 1, they're different.
 
 
 def create_folder(filename: str) -> str:
@@ -127,27 +167,76 @@ def process_video(video: cv2.VideoCapture, iterations: int, folder: str, seconds
         seconds (int): Number of seconds a slide has to last to be relevant, previously inputted by user.
     """
     _, frame = video.read()
-    cv2.imwrite(f'{folder}/current_image.png', frame)
+    cv2.imwrite(f"{folder}/current_image.png", frame)
     image_list = []
     for iteration in range(iterations):
         position = 1000 * iteration * seconds
         video.set(0, position)
         _, frame = video.read()
-        cv2.imwrite(f'{folder}/next_image.png', frame)
-        imageA = cv2.imread(f'{folder}/current_image.png')
-        imageB = cv2.imread(f'{folder}/next_image.png')
+        cv2.imwrite(f"{folder}/next_image.png", frame)
+        imageA = cv2.imread(f"{folder}/current_image.png")
+        imageB = cv2.imread(f"{folder}/next_image.png")
         if image_comparison(imageA, imageB):
-            cv2.imwrite(f'{folder}/current_image.png', frame)
-            cv2.imwrite(f'{folder}/{iteration}.png', frame)
-            print(f"Slide encontrado aos {str(datetime.timedelta(seconds= iteration * seconds))}.")
+            cv2.imwrite(f"{folder}/current_image.png", frame)
+            cv2.imwrite(f"{folder}/{iteration}.png", frame)
+            print(
+                f"Slide encontrado aos {str(datetime.timedelta(seconds= iteration * seconds))}."
+            )
             image_list.append(Image.open(f"{folder}/{iteration}.png"))
     capa = image_list[0]
-    capa.save(f'{folder}/slides.pdf', "PDF", resolution=100.0, save_all=True, append_images=image_list)
+    capa.save(
+        f"{folder}/slides.pdf",
+        "PDF",
+        resolution=100.0,
+        save_all=True,
+        append_images=image_list,
+    )
+
+
+def process_video_with_encoding(
+    video: cv2.VideoCapture, iterations: int, folder: str, seconds: int
+):
+    """This is an alternative version to the bulk of the program.
+       It will process the video, taking the different images, encoding them and assembling them in a PDF.
+
+    Args:
+        video (cv2.VideoCapture): Video file previously chosen by user.
+        iterations (int): Number of iterations, previously calculated by the program given the user's parameters.
+        folder (str): Folder where the files will be saved, previously created by other function and using the video file's name.
+        seconds (int): Number of seconds a slide has to last to be relevant, previously inputted by user.
+    """
+    _, frame = video.read()
+    # Instead of writing a frame, we encode it:
+    current_image = cv2.imencode(".png", frame)[1]
+    image_list = [current_image]
+    for iteration in range(iterations):
+        position = 1000 * iteration * seconds
+        video.set(0, position)
+        _, frame = video.read()
+        next_image = cv2.imencode(".png", frame)[1]
+        imageA = cv2.imdecode(current_image, cv2.IMREAD_GRAYSCALE)
+        imageB = cv2.imdecode(next_image, cv2.IMREAD_GRAYSCALE)
+        if image_comparison(imageA, imageB):
+            print(
+                f"Slide encontrado aos {str(datetime.timedelta(seconds= iteration * seconds))}."
+            )
+            image_list.append(next_image)
+    capa = Image.open(io.BytesIO(image_list[0]))
+    pdf_bytes = io.BytesIO()
+    capa.save(
+        pdf_bytes,
+        "PDF",
+        save_all=True,
+        append_images=[Image.open(io.BytesIO(x)) for x in image_list[1:]],
+    )
+    capa.save(
+        pdf_bytes, "PDF", resolution=100.0, save_all=True, append_images=image_list
+    )
+    return pdf_bytes.getvalue()
 
 
 def main():
-    """This is the main function, which will perform all the steps necessary for the extraction.
-    """
+    """This is the main function, which will perform all the steps necessary for the extraction."""
     seconds = receive_input()
     video = choose_video()
     video_capture = cv2.VideoCapture(video)
@@ -155,8 +244,8 @@ def main():
     iterations = calculate_iterations(video_length, seconds)
     folder = create_folder(video)
     process_video(video_capture, iterations, folder, seconds)
-    print('Extração concluída!')
+    print("Extração concluída!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
