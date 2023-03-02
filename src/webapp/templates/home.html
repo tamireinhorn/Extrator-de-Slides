@@ -9,14 +9,14 @@
     <div class="container">
       <h1>Video to PDF Converter</h1>
       <p>Convert your videos to PDF!</p>
-      <form id="video-form" action="{{ url_for('process_video') }}" method="post" enctype="multipart/form-data">
+      <form id="video-form" action="{{ url_for('process_video') }}" method="post" enctype="multipart/form-data" >
         <div class="form-group">
           <label for="video-file">Choose a video file:</label>
-          <input type="file" class="form-control" id="video-file" name="video">
+          <input type="file" class="form-control" id="video-file" name="video" required>
         </div>
         <div class="form-group">
           <label for="slide-duration">Enter slide duration (in seconds):</label>
-          <input type="number" class="form-control" id="slide-duration" name="slide-duration" value="5" min="1">
+          <input type="number" class="form-control" id="slide-duration" name="slide-duration" value="5" min="1" required>
         </div>
         <button type="submit" class="btn btn-primary">Generate PDF</button>
       </form>
