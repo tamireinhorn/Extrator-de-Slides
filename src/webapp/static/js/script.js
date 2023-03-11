@@ -21,14 +21,18 @@ function setFileInfo() {
   video.src = URL.createObjectURL(files[0]);;
 }
 
+let slideNumber = document.getElementById('slide-number');
+slideNumber.addEventListener('input', (event) => {
+  const slideDuration = myVideo.duration / slideNumber.value;
+  document.getElementById('slide-duration-info').textContent = `This means that we'll try to get a slide every ${slideDuration.toFixed(2)} seconds.`
+});
+
 
 function updateInfos() {
-  var infos = document.getElementById('video-duration-info');
-  var slideControl = document.getElementById('slide-control');
+  let infos = document.getElementById('video-duration-info');
+  let slideControl = document.getElementById('slide-control');
   slideControl.style.display = 'block';
   infos.textContent = `Your video has a duration of ${myVideo.duration} seconds.`;
-  var slideNumber = document.getElementById('slide-number');
-  console.log(slideNumber);
   slideNumber.setAttribute('max', myVideo.duration);
 
   
