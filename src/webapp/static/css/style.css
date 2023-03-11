@@ -42,3 +42,7 @@ button {
 button:hover {
     background-color: #cc5500;
 }
+
+#slide-control {
+    display: none;
+}

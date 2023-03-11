@@ -3,22 +3,24 @@
   <head>
     <title>Video to PDF Converter</title>
     <link rel="stylesheet" type="text/css" href="../static/css/style.css">
-    <script src="../static/js/script.js"></script>
+    <script src="../static/js/script.js" defer></script>
   </head>
   <body>
     <div class="container">
       <h1>Video to PDF Converter</h1>
-      <p>Convert your videos to PDF!</p>
+      <p>Take automatic screenshots of a video file, to generate a PDF.</p>
       <form id="video-form" action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data" >
         <div class="form-group">
-          <label for="video-file">Choose a video file:</label>
+          <label for="video-file">Please choose a video file:</label>
           <input type="file" class="form-control" id="video-file" name="video" required accept="video/*,.mkv" >
         </div>
-        <div class="form-group">
-          <label for="slide-duration">Enter slide duration (in seconds):</label>
-          <input type="number" class="form-control" id="slide-duration" name="slide-duration" value="5" min="1" required>
+        <div class="form-group" id = 'slide-control'>
+          <p id = 'video-duration-info'></p>
+          <label for="slide-duration">How many slides AT MOST do you think this video has?</label>
+          <input type="number" class="form-control" id="slide-number" value="5" min="1" required>
+          <button type="submit" class="btn btn-primary">Generate PDF</button>
         </div>
-        <button type="submit" class="btn btn-primary">Generate PDF</button>
+        
       </form>
     </div>
   </body>
