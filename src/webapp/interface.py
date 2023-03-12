@@ -1,3 +1,4 @@
+import traceback
 from flask import Flask, request, render_template, send_file
 from ExtratorSlides.SlideExtractor import *
 import numpy as np
@@ -19,7 +20,7 @@ def home():
 @app.route("/upload", methods=["POST"])
 def upload():
     video_file = request.files["video"]
-    iterations = request.form["slide-number"]
+    iterations = int(request.form["slide-number"])
     try:
 
         with tempfile.TemporaryDirectory(
@@ -31,11 +32,18 @@ def upload():
             video_file.save(temp_filename)
             video = cv2.VideoCapture(str(temp_filename))
             video_length = calculate_length_video(video)
+            seconds = video_length / iterations
+            print(seconds)
+            slides_pdf = process_video_with_encoding(video, iterations, seconds)
             video.release()
-            return "And it finally worked."
+            pdf_file = io.BytesIO(slides_pdf)
+            pdf_file.seek(0)
+            return send_file(pdf_file, download_name="slides.pdf", as_attachment=True)
     except Exception as e:
+        traceback.print_exc()
         return render_template("error.html", message=str(e))
     finally:
+        print("This?")
         shutil.rmtree(td, ignore_errors=True)
 
 

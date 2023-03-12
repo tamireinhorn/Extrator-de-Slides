@@ -214,7 +214,7 @@ def process_video_with_encoding(video: cv2.VideoCapture, iterations: int, second
         next_image = cv2.imencode(".png", frame)[1]
         imageA = cv2.imdecode(current_image, cv2.IMREAD_GRAYSCALE)
         imageB = cv2.imdecode(next_image, cv2.IMREAD_GRAYSCALE)
-        if image_comparison(imageA, imageB):
+        if image_comparison(imageA, imageB, True):
             print(
                 f"Slide encontrado aos {str(datetime.timedelta(seconds= iteration * seconds))}."
             )
@@ -226,9 +226,6 @@ def process_video_with_encoding(video: cv2.VideoCapture, iterations: int, second
         "PDF",
         save_all=True,
         append_images=[Image.open(io.BytesIO(x)) for x in image_list[1:]],
-    )
-    capa.save(
-        pdf_bytes, "PDF", resolution=100.0, save_all=True, append_images=image_list
     )
     return pdf_bytes.getvalue()
 
