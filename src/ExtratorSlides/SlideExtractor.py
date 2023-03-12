@@ -193,9 +193,7 @@ def process_video(video: cv2.VideoCapture, iterations: int, folder: str, seconds
     )
 
 
-def process_video_with_encoding(
-    video: cv2.VideoCapture, iterations: int, folder: str, seconds: int
-):
+def process_video_with_encoding(video: cv2.VideoCapture, iterations: int, seconds: int):
     """This is an alternative version to the bulk of the program.
        It will process the video, taking the different images, encoding them and assembling them in a PDF.
 
