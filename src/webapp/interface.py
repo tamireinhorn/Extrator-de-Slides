@@ -19,7 +19,7 @@ def home():
 @app.route("/upload", methods=["POST"])
 def upload():
     video_file = request.files["video"]
-    slide_duration = request.form["slide-duration"]
+    slide_duration = request.form["slide-number"]
     try:
 
         with tempfile.TemporaryDirectory(
