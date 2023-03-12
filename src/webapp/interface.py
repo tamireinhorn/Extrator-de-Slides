@@ -19,7 +19,7 @@ def home():
 @app.route("/upload", methods=["POST"])
 def upload():
     video_file = request.files["video"]
-    slide_duration = request.form["slide-number"]
+    iterations = request.form["slide-number"]
     try:
 
         with tempfile.TemporaryDirectory(
@@ -27,10 +27,10 @@ def upload():
         ) as td:
             print("Temporary directory created at:", td)
             temp_filename = Path(td) / "uploaded_video"
+            validate_video(video_file.filename)
             video_file.save(temp_filename)
             video = cv2.VideoCapture(str(temp_filename))
             video_length = calculate_length_video(video)
-            iterations = calculate_iterations(video_length, int(slide_duration))
             video.release()
             return "And it finally worked."
     except Exception as e:
